@@ -1,0 +1,303 @@
+#include <type_traits> 
+#include <string>
+#include <vector>
+#include <cmath>
+#include <stdlib.h>
+#include <iostream>
+
+using namespace std;
+
+#pragma warning(disable : 4996) // необходимо, чтобы компиллятор не выдавал ошибку
+struct Data
+{
+    bool IsDeleted = false; // эта переменная показывает, пуста ли позиция нашей структуры
+};
+
+// дженерик конструкция, которая применяется, когда нам не нужно знать тип используемых данных
+template<typename TStruct, typename = enable_if< is_base_of<Data, TStruct>::value>>
+
+// класс с используемыми в main методами
+class Database
+{
+private:
+    TStruct* _dataArray;
+    long _databaseSize;
+    char* _databaseName;
+
+    // эта функция используется при сортировке
+    void swap(TStruct* xp, TStruct* yp)
+    {
+        TStruct temp = *xp;
+        *xp = *yp;
+        *yp = temp;
+    }
+
+public:
+    Database(string databaseName, long length) {
+        _databaseName = new char[databaseName.length() + 1];
+        strcpy(_databaseName, databaseName.c_str());
+
+        _dataArray = new TStruct[length];
+        _databaseSize = length;
+
+        for (size_t i = 0; i < _databaseSize; i++)
+            _dataArray[i].IsDeleted = true;
+    }
+
+    ~Database() {
+        delete[] _dataArray;
+    }
+
+    // 1. Очистка структурных переменных (отметка переменной как не содержащей данных). Функция должна получать в качестве параметра индекс массива.
+    void Delete(int index) {
+        _dataArray[index].IsDeleted = true;
+    }
+
+    // 2. Поиск свободной структурной переменной. Функция должна возвращать индекс первого свободного элемента в массиве структур.
+    int FindEmpty() {
+        for (size_t i = 0; i < _databaseSize; i++)
+            if (_dataArray[i].IsDeleted)
+                return i;
+
+        return -1;
+    }
+
+    // 3. Ввод элементов (полей) структуры с клавиатуры. В качестве параметра в функцию должен передаваться индекс элемента массива.
+    void Add(int index, TStruct data) {
+        _dataArray[index] = data;
+        _dataArray[index].IsDeleted = false;
+    }
+
+    // 4. Вывод элементов (полей) структуры на монитор. В функцию должен передаваться индекс элемента массива.
+    TStruct Get(int index) {
+        return _dataArray[index];
+    }
+
+    // 5. Вывод на экран всех заполненных элементов массива структур. 
+    vector<TStruct> GetAll() {
+        vector<TStruct> result;
+        for (size_t i = 0; i < _databaseSize; i++)
+            if (!_dataArray[i].IsDeleted)
+                result.push_back(_dataArray[i]);
+        return result;
+    }
+
+    // 6. Поиск в массиве структур элемента с заданным значением поля или с наиболее близким к нему по значению. 
+    // Функция для числовых значений
+    TStruct* FindNearestInt(int (*selectorFunction)(TStruct), int searchElement) {
+        int indexOfNearestElement = -1;
+        int minimalDiff = INT_MAX;
+
+        for (size_t i = 0; i < _databaseSize; i++)
+            if (!_dataArray[i].IsDeleted) {
+                int valueDiff = abs(selectorFunction(_dataArray[i]) - searchElement);
+
+                if (valueDiff < minimalDiff) {
+                    minimalDiff = valueDiff;
+                    indexOfNearestElement = i;
+                }
+            }
+
+        return indexOfNearestElement == -1 ? (TStruct*)NULL : &_dataArray[indexOfNearestElement];
+    }
+
+
+    // Функция для строковых значений 
+    TStruct* FindNearestString(string(*selectorFunction)(TStruct), string searchElement) {
+        for (size_t i = 0; i < _databaseSize; i++)
+            if (!_dataArray[i].IsDeleted && selectorFunction(_dataArray[i]).find(searchElement) != string::npos)
+                return &_dataArray[i];
+        return NULL;
+    }
+
+
+
+    // 7. Поиск в массиве структуры с минимальным значением заданного поля. 
+    // Поле должно передаваться в поле числом, обозначающим номер поля в структуре.
+    template<typename TValue>
+    TStruct* FindMin(TValue(*selectorFunction)(TStruct)) {
+        TValue min = selectorFunction(_dataArray[0]);
+        int indexOfMinElement = -1;
+        for (size_t i = 0; i < _databaseSize; i++)
+            if (!_dataArray[i].IsDeleted && selectorFunction(_dataArray[i]) <= min)
+            {
+                indexOfMinElement = i;
+                min = selectorFunction(_dataArray[i]);
+            }
+
+        return indexOfMinElement == -1 ? (TStruct*)NULL : &_dataArray[indexOfMinElement];
+    }
+
+
+    // 8,9. Сортировка массива структур в порядке возрастания или убывания заданного поля.
+    // используется сортировка пузырьком
+    void SortBy(bool (*f)(TStruct, TStruct)) {
+        for (int i = 0; i < _databaseSize - 1; i++)
+            for (int j = 0; j < _databaseSize - i - 1; j++)
+                if (f(_dataArray[j], _dataArray[j + 1]))
+                    swap(&_dataArray[j], &_dataArray[j + 1]);
+    }
+
+    // 10. Функция чтения файла с содержимым базы данных (массива структурных элементов).
+    void Restore() {
+        FILE* file;
+        fopen_s(&file, _databaseName, "rb");
+
+        for (size_t i = 0; i < _databaseSize; i++)
+            fread(&_dataArray[i], sizeof(TStruct), 1, file);
+
+        fclose(file);
+    }
+
+    // 11. Функция записи в файл содержимого базы данных (массива структурных элементов).
+    void Save() {
+        FILE* file;
+        fopen_s(&file, _databaseName, "wb");
+
+        for (size_t i = 0; i < _databaseSize; i++)
+            fwrite(&_dataArray[i], sizeof(TStruct), 1, file);
+
+        fclose(file);
+    }
+};
+
+
+// 5 вариант, необходимо ввести фио, номер зачетной книжки, номер группы и факультет
+struct StudentBase : Data
+{
+    int GradebookNumber;
+    string Name; 
+    int GroupNumber;
+    string Faculty;
+};
+
+int main() {
+    int dbSize = 10;
+    string dbName = "StudentDatabase.bin";
+    setlocale(LC_ALL, "Russian");
+    int command(-1);
+    int n;
+    Database<StudentBase>* database = new Database<StudentBase>(dbName, dbSize);
+
+    cout << "База данных пуста. Для начала работы с базой данных введите произвольные значения, согласно требованиям." << endl;
+    cout << "Сколько данных желаете ввести?" << endl;
+    cin >> n;
+
+    // 1. ввод данных
+    for (size_t i = 0; i < n; i++)
+    {
+        StudentBase structure;
+        cout << "ФИО: ";
+        getline(cin, structure.Name);
+        if (i==0) getline(cin, structure.Name);
+        cout << "Номер зачетной книжки: ";
+        cin >> structure.GradebookNumber;
+        cout << "Номер группы: ";
+        cin >> structure.GroupNumber;
+        cout << "Факультет: ";
+        getline(cin, structure.Faculty);
+        getline(cin, structure.Faculty);
+        database->Add(i, structure);
+        cout << "Ваши данные внесены! " << endl;
+    }
+
+    // данные сохраняются в файл
+    database->Save();
+
+    // уничтожение экземпляра Database и восстановление из файла
+    delete database;
+    database = new Database<StudentBase>(dbName, dbSize);
+    database->Restore();
+    while (command != 0) {
+        cout << endl;
+        cout << "Введите одну из команд для работы с базой данных:" << endl;
+        cout << "1 - вывод всех заполенных полей" << endl;
+        cout << "2 - поиск элемента с заданным значением или наиболее близким значением по номеру зачетной книжки (числу)" << endl;
+        cout << "3 - поиск элемента с заданным значением или наиболее близким значением по ФИО (строке)" << endl;
+        cout << "4 - поиск в массиве структуры с минимальным значением заданного поля, номер группы (число)" << endl;
+        cout << "5 - поиск в массиве структуры с минимальным значением заданного поля, факультет (строка)" << endl;
+        cout << "6 - сортировка массива в порядке возрастания, ФИО (строка)" << endl;
+        cout << "7 - сортировка массива в порядке возрастания, номер группы (число)" << endl;
+        cout << "0 - выход из программы" << endl;
+
+        cin >> command;
+        switch (command) {
+        case 1:
+        {
+            // вывод данных
+            vector<StudentBase> all = database->GetAll();
+            for (size_t i = 0; i < all.size(); i++)
+                cout << all[i].Name << " " << all[i].GradebookNumber << " " << all[i].GroupNumber << " " << all[i].Faculty << endl;
+        }
+        break;
+        case 2:
+        {
+            // поиск наиболее близкого значения по числу
+            int numberToSearch;
+            cout << "Какой искать номер зачетной книжки: ";
+            cin >> numberToSearch;
+            StudentBase* resByInt = database->FindNearestInt([](StudentBase p) { return p.GradebookNumber; }, numberToSearch);
+            if (resByInt == NULL)
+                cout << "Не найдено!" << endl;
+            else
+                cout << resByInt->Name << " " << resByInt->GradebookNumber << " " << resByInt->GroupNumber << " " << resByInt->Faculty << endl;
+        }
+        break;
+        case 3:
+        {
+            // поиск наиболее близкого значения по строке
+            string name;
+            cout << "Какую дату искать: ";
+            cin >> name;
+            StudentBase* resByStr = database->FindNearestString([](StudentBase p) { return  string(p.Name); }, name);
+            if (resByStr == NULL)
+                cout << "Не найдено!" << endl;
+            else
+                cout << resByStr->Name << " " << resByStr->GradebookNumber << " " << resByStr->GroupNumber << " " << resByStr->Faculty << endl;
+        }
+        break;
+        case 4:
+        {
+            // поиск минимального значения, число
+            StudentBase* minByFaculty = database->FindMin<int>([](StudentBase p) { return p.GroupNumber; });
+            cout << "Минимальное значение по номеру группы: " << minByFaculty->Name << " " << minByFaculty->GradebookNumber << " " << minByFaculty->GroupNumber << " " << minByFaculty->Faculty << endl;
+        }
+        break;
+        case 5:
+        {
+            // поиск минимального значения, строка
+            StudentBase* minByDate = database->FindMin<string>([](StudentBase p) { return  string(p.Faculty); });
+            cout << "Минимальное значение по факультету: " << minByDate->Name << " " << minByDate->GradebookNumber << " " << minByDate->GroupNumber << " " << minByDate->Faculty << endl;
+        }
+        break;
+        case 6:
+        {
+            // сортировка по возрастанию, строки
+            database->SortBy([](StudentBase p1, StudentBase p2) { return  string(p1.Name) > string(p2.Name); });
+            cout << "Сортировка по возрастанию по ФИО " << endl;
+            vector<StudentBase> allAfterSortByName = database->GetAll();
+            for (size_t i = 0; i < allAfterSortByName.size(); i++)
+                cout << allAfterSortByName[i].Name << " " << allAfterSortByName[i].GradebookNumber << " " << allAfterSortByName[i].GroupNumber << " " << allAfterSortByName[i].Faculty << endl;
+        }
+        break;
+        case 7:
+        {
+            // сортировки по убыванию, числа
+            database->SortBy([](StudentBase p1, StudentBase p2) { return p1.GroupNumber < p2.GroupNumber; });
+            cout << "Сортировка по убыванию по номеру группы: " << endl;
+            vector<StudentBase> allAfterSortByGroupNumber = database->GetAll();
+            for (size_t i = 0; i < allAfterSortByGroupNumber.size(); i++)
+                cout << allAfterSortByGroupNumber[i].Name << " " << allAfterSortByGroupNumber[i].GradebookNumber << " " << allAfterSortByGroupNumber[i].GroupNumber << " " << allAfterSortByGroupNumber[i].Faculty << endl;
+        }
+        break;
+        case 0:
+            break;
+        default:
+            cout << "Вы ввели неправильную команду!" << endl;
+            break;
+        }
+    }
+
+
+    return 0;
+}
