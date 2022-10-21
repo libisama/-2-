@@ -179,30 +179,6 @@ int main() {
     int n;
     Database<StudentBase>* database = new Database<StudentBase>(dbName, dbSize);
 
-    cout << "База данных пуста. Для начала работы с базой данных введите произвольные значения, согласно требованиям." << endl;
-    cout << "Сколько данных желаете ввести?" << endl;
-    cin >> n;
-
-    // 1. ввод данных
-    for (size_t i = 0; i < n; i++)
-    {
-        StudentBase structure;
-        cout << "ФИО: ";
-        getline(cin, structure.Name);
-        if (i==0) getline(cin, structure.Name);
-        cout << "Номер зачетной книжки: ";
-        cin >> structure.GradebookNumber;
-        cout << "Номер группы: ";
-        cin >> structure.GroupNumber;
-        cout << "Факультет: ";
-        getline(cin, structure.Faculty);
-        getline(cin, structure.Faculty);
-        database->Add(i, structure);
-        cout << "Ваши данные внесены! " << endl;
-    }
-
-    // данные сохраняются в файл
-    database->Save();
 
     // уничтожение экземпляра Database и восстановление из файла
     delete database;
@@ -218,6 +194,9 @@ int main() {
         cout << "5 - поиск в массиве структуры с минимальным значением заданного поля, факультет (строка)" << endl;
         cout << "6 - сортировка массива в порядке возрастания, ФИО (строка)" << endl;
         cout << "7 - сортировка массива в порядке возрастания, номер группы (число)" << endl;
+        cout << "8 - ввод данных и сохранение их в файл" << endl;
+        cout << "9 - очистка структурной переменной" << endl;
+        cout << "10 - поиск свободной структурной переменной" << endl;
         cout << "0 - выход из программы" << endl;
 
         cin >> command;
@@ -247,7 +226,7 @@ int main() {
         {
             // поиск наиболее близкого значения по строке
             string name;
-            cout << "Какую дату искать: ";
+            cout << "Какое ФИО искать: ";
             cin >> name;
             StudentBase* resByStr = database->FindNearestString([](StudentBase p) { return  string(p.Name); }, name);
             if (resByStr == NULL)
@@ -290,6 +269,45 @@ int main() {
                 cout << allAfterSortByGroupNumber[i].Name << " " << allAfterSortByGroupNumber[i].GradebookNumber << " " << allAfterSortByGroupNumber[i].GroupNumber << " " << allAfterSortByGroupNumber[i].Faculty << endl;
         }
         break;
+        case 8:
+        {
+            cout << "Сколько данных желаете ввести?" << endl;
+            cin >> n;
+
+            // 1. ввод данных
+            for (size_t i = 0; i < n; i++)
+            {
+                StudentBase structure;
+                cout << "ФИО: ";
+                getline(cin, structure.Name);
+                if (i == 0) getline(cin, structure.Name);
+                cout << "Номер зачетной книжки: ";
+                cin >> structure.GradebookNumber;
+                cout << "Номер группы: ";
+                cin >> structure.GroupNumber;
+                cout << "Факультет: ";
+                getline(cin, structure.Faculty);
+                getline(cin, structure.Faculty);
+                database->Add(i, structure);
+                cout << "Ваши данные внесены! " << endl;
+                // данные сохраняются в файл
+                database->Save();
+            }
+        }
+            break;
+        case 9:
+        {
+            cout << "Элемент с каким индексом нужно удалить?" << endl;
+            cin >> n;
+            database->Delete(n);
+            cout << "Элемент с данным индексом удален!" << endl;
+        }
+            break;
+        case 10:
+        {
+            cout << "Индекс первого свободного элемента: " << database->FindEmpty() << endl;
+        }
+            break;
         case 0:
             break;
         default:
