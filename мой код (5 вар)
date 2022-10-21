@@ -197,6 +197,7 @@ int main() {
         cout << "8 - ввод данных и сохранение их в файл" << endl;
         cout << "9 - очистка структурной переменной" << endl;
         cout << "10 - поиск свободной структурной переменной" << endl;
+        cout << "11 - вывод элемента с определенным индексом" << endl;
         cout << "0 - выход из программы" << endl;
 
         cin >> command;
@@ -308,6 +309,15 @@ int main() {
             cout << "Индекс первого свободного элемента: " << database->FindEmpty() << endl;
         }
             break;
+        case 11:
+        {
+            cout << "Элемент с каким индексом нужно вывести? " << endl;
+            cin >> n;
+            StudentBase all = database->Get(n);
+            cout << all.Name << " " << all.GradebookNumber << " " << all.GroupNumber << " " << all.Faculty << endl;
+        }
+        break;
+
         case 0:
             break;
         default:
