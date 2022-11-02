@@ -1,0 +1,503 @@
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+// 8 вариант, необходимо ввести номер рейса, пункт назначения, время вылета, дату вылета и стоимость билета
+
+struct TicketBase
+{
+    string DestinationName; // пункт назначения, тип данных - строковый
+    string FlightTime; // время вылета, тип данных - строковый
+    string FlightDate; // дата вылета, тип данных - строковый
+    int FlightNumber; // номер рейса, тип данных - числовой
+    int TicketPrice; // стоимость билета, тип данных - числовой
+    TicketBase* next; // указатель на следующий элемент
+};
+
+class TicketList
+{
+private:
+    TicketBase* head; // указатель на первый элемент списка
+    TicketBase* tail; // указатель на последний элемент списка
+    int NumberOfElements = 0; // общее число элементов
+
+
+public:
+
+    // добавление элемента в начало списка
+    void push_front(TicketBase* NewElement)
+    {
+        TicketBase* NewEl = new TicketBase;
+        NewEl->FlightNumber = NewElement->FlightNumber;
+        NewEl->DestinationName = NewElement->DestinationName;
+        NewEl->FlightTime = NewElement->FlightTime;
+        NewEl->FlightDate = NewElement->FlightDate;
+        NewEl->TicketPrice = NewElement->TicketPrice;
+
+        if (head) {
+            NewEl->next = head;
+            head = NewEl;
+        }
+        else {
+            head = NewEl;
+            tail = NewEl;
+
+        }
+        NumberOfElements++;
+    };
+
+    // добавление элемента в конец списка
+    void push_back(TicketBase* NewElement)
+    {
+        TicketBase* Element = head;
+        TicketBase* NewEl = new TicketBase;
+        NewEl->FlightNumber = NewElement->FlightNumber;
+        NewEl->DestinationName = NewElement->DestinationName;
+        NewEl->FlightTime = NewElement->FlightTime;
+        NewEl->FlightDate = NewElement->FlightDate;
+        NewEl->TicketPrice = NewElement->TicketPrice;
+
+        if (!tail || NumberOfElements == 0) {
+            head = NewEl;
+            tail = NewEl;
+        }
+        else {
+            for (int i = 1; i < NumberOfElements; i++) {
+                Element = Element->next;
+            }
+            Element->next = NewEl;
+            tail = Element->next;
+        }
+        NumberOfElements++;
+    };
+
+    // удаление начального элемента списка
+    void pop_front()
+    {
+        head = head->next;
+        NumberOfElements--;
+    };
+
+    // удаление конечного элемента списка
+    void pop_back()
+    {
+        TicketBase* Element = head;
+        while (Element->next != tail) Element = Element->next;
+        tail = Element;
+        tail->next = 0;
+        NumberOfElements--;
+    };
+
+    // поиск элемента по заданному значению поля структуры (числовой тип)
+    TicketBase* search_int(int (*selectorFunction)(TicketBase*), int searchElement) {
+        TicketBase* indexOfNearestElement = 0;
+        int minimalDiff = INT_MAX;
+        TicketBase* Element = head;
+
+        for (size_t i = 0; i < NumberOfElements; i++) {
+            int valueDiff = abs(selectorFunction(Element) - searchElement);
+
+            if (valueDiff < minimalDiff) {
+                minimalDiff = valueDiff;
+                indexOfNearestElement = Element;
+            }
+            Element = Element->next;
+        }
+        if (indexOfNearestElement) { return indexOfNearestElement; }
+        else
+            return NULL;
+    };
+
+    // поиск элемента по заданному значению поля структуры (строковый тип)
+    TicketBase* search_string(string(*selectorFunction)(TicketBase*), string searchElement) {
+        TicketBase* Element = head;
+        for (size_t i = 0; i < NumberOfElements; i++) {
+            if (selectorFunction(Element).find(searchElement) != string::npos)
+                return Element;
+            Element = Element->next;
+        }
+
+        return NULL;
+    };
+
+    // добавление элемента после найденного
+    void insert(TicketBase* ElementToAdd, TicketBase* ElementToFind) {
+        TicketBase* Element = head;
+        TicketBase* NewEl = new TicketBase;
+        NewEl = ElementToAdd;
+        while (Element != ElementToFind) {
+            Element = Element->next;
+        }
+        TicketBase* ElementToRemember = Element->next;
+        Element->next = NewEl;
+        Element->next->next = ElementToRemember;
+        NumberOfElements++;
+    };
+
+    // удаление найденного элемента
+    void remove(TicketBase* ElementToDelete) {
+        TicketBase* Element = head;
+        if (head && head != ElementToDelete) {
+            while (Element && Element->next != ElementToDelete) {
+                Element = Element->next;
+            }
+            Element->next = Element->next->next;
+        }
+        else {
+            head = head->next;
+        }
+
+        NumberOfElements--;
+    }
+
+    // вывод всех элементов списка
+    vector<TicketBase*> GetAll() {
+        vector<TicketBase*> result;
+        TicketBase* OutputEl = head;
+        for (size_t i = 0; i < NumberOfElements; i++) {
+            result.push_back(OutputEl);
+            OutputEl = OutputEl->next;
+        }
+        return result;
+    }
+
+};
+
+
+int main()
+{
+    setlocale(LC_ALL, "Russian");
+    int command = -1;
+    int command2 = -1;
+    TicketBase NewEl;
+    TicketList NewList;
+    int TypeOfElement = -1;
+    string DestinationNameToSearch;
+    string FlightTimeToSearch;
+    string FlightDateToSearch;
+    int FlightNumberToSearch;
+    int TicketPriceToSearch;
+    vector<TicketBase*> Output;
+
+    TicketBase* FoundElement;
+
+    while (command != 0) {
+        cout << endl;
+        cout << "Введите одну из команд для работы с односвязным списком:" << endl;
+        cout << "1 - добавление элемента в конец списка" << endl;
+        cout << "2 - добавление элемента в начало списка" << endl;
+        cout << "3 - удаление конечного элемента списка" << endl;
+        cout << "4 - удаление начального элемента списка" << endl;
+        cout << "5 - поиск элемента по заданному значению поля структуры (возможность удалить данный элемент или добавить после него новый)" << endl;
+        cout << "0 - выход из программы" << endl;
+
+        cin >> command;
+        switch (command) {
+        case 1:
+        {
+            cout << "Номер рейса: ";
+            cin >> NewEl.FlightNumber;
+            cout << "Пункт назначения: ";
+            getline(cin, NewEl.DestinationName);
+            getline(cin, NewEl.DestinationName);
+            cout << "Время вылета: ";
+            cin >> NewEl.FlightTime;
+            cout << "Дата вылета: ";
+            getline(cin, NewEl.FlightDate);
+            getline(cin, NewEl.FlightDate);
+            cout << "Стоимость билета: ";
+            cin >> NewEl.TicketPrice;
+            NewList.push_back(&NewEl);
+            cout << "Ваши данные внесены в конец списка! " << endl;
+        }
+        break;
+        case 2:
+        {
+            cout << "Номер рейса: ";
+            cin >> NewEl.FlightNumber;
+            cout << "Пункт назначения: ";
+            getline(cin, NewEl.DestinationName);
+            getline(cin, NewEl.DestinationName);
+            cout << "Время вылета: ";
+            cin >> NewEl.FlightTime;
+            cout << "Дата вылета: ";
+            getline(cin, NewEl.FlightDate);
+            getline(cin, NewEl.FlightDate);
+            cout << "Стоимость билета: ";
+            cin >> NewEl.TicketPrice;
+            NewList.push_front(&NewEl);
+            cout << "Ваши данные внесены в начало списка! " << endl;
+        }
+        break;
+        case 3:
+        {
+            NewList.pop_back();
+            cout << "Конечный элемент списка удален! " << endl;
+        }
+        break;
+        case 4:
+        {
+            NewList.pop_front();
+            cout << "Начальный элемент списка удален! " << endl;
+
+        }
+        break;
+        case 5:
+        {
+            cout << "По какому полю значений будет производиться поиск?" << endl;
+            cout << "1 - номер рейса" << endl;
+            cout << "2 - пункт назначения" << endl;
+            cout << "3 - время вылета" << endl;
+            cout << "4 - дата вылета" << endl;
+            cout << "5 - стоимость билета" << endl;
+            cout << "0 - выход из подпрограммы" << endl;
+            cin >> TypeOfElement;
+            switch (TypeOfElement) {
+            case 1:
+            {
+                cout << "Какой номер рейса искать?" << endl;
+                cin >> FlightNumberToSearch;
+                FoundElement = NewList.search_int([](TicketBase* Element) { return Element->FlightNumber; }, FlightNumberToSearch);
+                if (FoundElement == NULL) cout << "Не найдено" << endl;
+                else {
+                    cout << FoundElement->FlightNumber << " " << FoundElement->DestinationName << " " << FoundElement->FlightTime << " " << FoundElement->FlightDate << " " << FoundElement->TicketPrice << endl;
+                    cout << "Что сделать с найденным элементом?" << endl;
+                    cout << "1 - добавить после него еще один элемент" << endl;
+                    cout << "2 - удалить его" << endl;
+                    cout << "3 - ничего не делать (выход из подпрограммы)" << endl;
+                    cin >> command2;
+                    switch (command2) {
+                    case 1:
+                    {
+                        cout << "Номер рейса: ";
+                        cin >> NewEl.FlightNumber;
+                        cout << "Пункт назначения: ";
+                        getline(cin, NewEl.DestinationName);
+                        getline(cin, NewEl.DestinationName);
+                        cout << "Время вылета: ";
+                        cin >> NewEl.FlightTime;
+                        cout << "Дата вылета: ";
+                        getline(cin, NewEl.FlightDate);
+                        getline(cin, NewEl.FlightDate);
+                        cout << "Стоимость билета: ";
+                        cin >> NewEl.TicketPrice;
+                        NewList.insert(&NewEl, FoundElement);
+                    }
+                    break;
+                    case 2:
+                        NewList.remove(FoundElement);
+                        break;
+                    case 3:
+                        break;
+                    default:
+                        cout << "Вы ввели неправильную команду!" << endl;
+                        break;
+
+                    }
+                }
+            }
+            break;
+            case 2:
+            {
+                cout << "Какой пункт назначения искать?" << endl;
+                getline(cin, DestinationNameToSearch);
+                getline(cin, DestinationNameToSearch);
+                FoundElement = NewList.search_string([](TicketBase* Element) { return Element->DestinationName; }, DestinationNameToSearch);
+                if (FoundElement == NULL) cout << "Не найдено" << endl;
+                else {
+                    cout << FoundElement->FlightNumber << " " << FoundElement->DestinationName << " " << FoundElement->FlightTime << " " << FoundElement->FlightDate << " " << FoundElement->TicketPrice << endl;
+                    cout << "Что сделать с найденным элементом?" << endl;
+                    cout << "1 - добавить после него еще один элемент" << endl;
+                    cout << "2 - удалить его" << endl;
+                    cout << "3 - ничего не делать (выход из подпрограммы)" << endl;
+                    cin >> command2;
+                    switch (command2) {
+                    case 1:
+                    {
+                        cout << "Номер рейса: ";
+                        cin >> NewEl.FlightNumber;
+                        cout << "Пункт назначения: ";
+                        getline(cin, NewEl.DestinationName);
+                        getline(cin, NewEl.DestinationName);
+                        cout << "Время вылета: ";
+                        cin >> NewEl.FlightTime;
+                        cout << "Дата вылета: ";
+                        getline(cin, NewEl.FlightDate);
+                        getline(cin, NewEl.FlightDate);
+                        cout << "Стоимость билета: ";
+                        cin >> NewEl.TicketPrice;
+                        NewList.insert(&NewEl, FoundElement);
+                    }
+                    break;
+                    case 2:
+                        NewList.remove(FoundElement);
+                        break;
+                    case 3:
+                        break;
+                    default:
+                        cout << "Вы ввели неправильную команду!" << endl;
+                        break;
+                    }
+                }
+                break;
+            }
+            case 3:
+            {
+                cout << "Какое время вылета искать?" << endl;
+                cin >> FlightTimeToSearch;
+                FoundElement = NewList.search_string([](TicketBase* Element) { return Element->FlightTime; }, FlightTimeToSearch);
+                if (FoundElement == NULL) cout << "Не найдено" << endl;
+                else {
+                    cout << FoundElement->FlightNumber << " " << FoundElement->DestinationName << " " << FoundElement->FlightTime << " " << FoundElement->FlightDate << " " << FoundElement->TicketPrice << endl;
+                    cout << "Что сделать с найденным элементом?" << endl;
+                    cout << "1 - добавить после него еще один элемент" << endl;
+                    cout << "2 - удалить его" << endl;
+                    cout << "3 - ничего не делать (выход из подпрограммы)" << endl;
+                    cin >> command2;
+                    switch (command2) {
+                    case 1:
+                    {
+                        cout << "Номер рейса: ";
+                        cin >> NewEl.FlightNumber;
+                        cout << "Пункт назначения: ";
+                        getline(cin, NewEl.DestinationName);
+                        getline(cin, NewEl.DestinationName);
+                        cout << "Время вылета: ";
+                        cin >> NewEl.FlightTime;
+                        cout << "Дата вылета: ";
+                        getline(cin, NewEl.FlightDate);
+                        getline(cin, NewEl.FlightDate);
+                        cout << "Стоимость билета: ";
+                        cin >> NewEl.TicketPrice;
+                        NewList.insert(&NewEl, FoundElement);
+                    }
+                    break;
+                    case 2:
+                        NewList.remove(FoundElement);
+                        break;
+                    case 3:
+                        break;
+                    default:
+                        cout << "Вы ввели неправильную команду!" << endl;
+                        break;
+                    }
+                }
+                break;
+            }
+            case 4:
+            {
+                cout << "Какую дату вылета искать?" << endl;
+                getline(cin, FlightDateToSearch);
+                getline(cin, FlightDateToSearch);
+                FoundElement = NewList.search_string([](TicketBase* Element) { return Element->FlightDate; }, FlightDateToSearch);
+                if (FoundElement == NULL) cout << "Не найдено" << endl;
+                else {
+                    cout << FoundElement->FlightNumber << " " << FoundElement->DestinationName << " " << FoundElement->FlightTime << " " << FoundElement->FlightDate << " " << FoundElement->TicketPrice << endl;
+                    cout << "Что сделать с найденным элементом?" << endl;
+                    cout << "1 - добавить после него еще один элемент" << endl;
+                    cout << "2 - удалить его" << endl;
+                    cout << "3 - ничего не делать (выход из подпрограммы)" << endl;
+                    cin >> command2;
+                    switch (command2) {
+                    case 1:
+                    {
+                        cout << "Номер рейса: ";
+                        cin >> NewEl.FlightNumber;
+                        cout << "Пункт назначения: ";
+                        getline(cin, NewEl.DestinationName);
+                        getline(cin, NewEl.DestinationName);
+                        cout << "Время вылета: ";
+                        cin >> NewEl.FlightTime;
+                        cout << "Дата вылета: ";
+                        getline(cin, NewEl.FlightDate);
+                        getline(cin, NewEl.FlightDate);
+                        cout << "Стоимость билета: ";
+                        cin >> NewEl.TicketPrice;
+                        NewList.insert(&NewEl, FoundElement);
+                    }
+                    break;
+                    case 2:
+                        NewList.remove(FoundElement);
+                        break;
+                    case 3:
+                        break;
+                    default:
+                        cout << "Вы ввели неправильную команду!" << endl;
+                        break;
+                    }
+                }
+                break;
+            }
+            case 5:
+            {
+                cout << "Какую стоимость билета искать?" << endl;
+                cin >> TicketPriceToSearch;
+                FoundElement = NewList.search_int([](TicketBase* Element) { return Element->TicketPrice; }, TicketPriceToSearch);
+                if (FoundElement == NULL) cout << "Не найдено" << endl;
+                else {
+                    cout << FoundElement->FlightNumber << " " << FoundElement->DestinationName << " " << FoundElement->FlightTime << " " << FoundElement->FlightDate << " " << FoundElement->TicketPrice << endl;
+                    cout << "Что сделать с найденным элементом?" << endl;
+                    cout << "1 - добавить после него еще один элемент" << endl;
+                    cout << "2 - удалить его" << endl;
+                    cout << "3 - ничего не делать (выход из подпрограммы)" << endl;
+                    cin >> command2;
+                    switch (command2) {
+                    case 1:
+                    {
+                        cout << "Номер рейса: ";
+                        cin >> NewEl.FlightNumber;
+                        cout << "Пункт назначения: ";
+                        getline(cin, NewEl.DestinationName);
+                        getline(cin, NewEl.DestinationName);
+                        cout << "Время вылета: ";
+                        cin >> NewEl.FlightTime;
+                        cout << "Дата вылета: ";
+                        getline(cin, NewEl.FlightDate);
+                        getline(cin, NewEl.FlightDate);
+                        cout << "Стоимость билета: ";
+                        cin >> NewEl.TicketPrice;
+                        NewList.insert(&NewEl, FoundElement);
+                    }
+                    break;
+                    case 2:
+                        NewList.remove(FoundElement);
+                        break;
+                    case 3:
+                        break;
+                    default:
+                        cout << "Вы ввели неправильную команду!" << endl;
+                        break;
+
+                    }
+                }
+            }
+            break;
+            case 0:
+                break;
+            default:
+                cout << "Вы ввели неправильную команду!" << endl;
+                break;
+            }
+        }
+        break;
+        case 0:
+            break;
+        case 10:
+        {
+            Output = NewList.GetAll();
+            for (size_t i = 0; i < Output.size(); i++)
+                cout << Output[i]->FlightNumber << " " << Output[i]->DestinationName << " " << Output[i]->FlightTime << " " << Output[i]->FlightDate << " " << Output[i]->TicketPrice << endl;
+
+        }
+
+        break;
+        default:
+            cout << "Вы ввели неправильную команду!" << endl;
+            break;
+
+        }
+    }
+    return 0;
+}
