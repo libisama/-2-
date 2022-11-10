@@ -1,0 +1,272 @@
+#include <iostream>
+#include <queue>
+#include <iomanip>
+
+using namespace std;
+
+struct bin_node {
+	int data;
+	struct bin_node* left;
+	struct bin_node* right;
+};
+
+class bin_tree {
+private:
+	bin_node* root;
+
+	bin_node* search_p(int element)
+	{
+		bin_node* found, * search;
+		if (root != NULL)
+		{
+			found = search = root;
+			while (search != NULL)
+			{
+				if (search->data < element)
+				{
+					found = search;
+					search = search->right;
+				}
+				else if (search->data > element)
+				{
+					found = search;
+					search = search->left;
+				}
+				else
+				{
+					return search;
+				}
+			}
+			return found;
+		}
+	}
+public:
+	bin_tree()
+	{
+		root = NULL;
+	}
+
+	int level_output(bin_node* root, int level)
+	{
+		if (root != NULL)
+		{
+			int left_el = level_output(root->left, ++level);
+			int right_el = level_output(root->right, level);
+			return left_el > right_el ? left_el : right_el;
+		}
+		return level;
+	}
+
+	void output()
+	{
+		queue<bin_node*> queue;
+		FILE* fp;
+		char name[] = "1.txt";
+		fopen_s(&fp, name, "a");
+		queue.push(root);
+		int counter = 1;
+		bool flag = false;
+		int level = level_output(root, 0) - 1;
+		bin_node* element;
+		int spaces = pow(2, level - 1) * 4 - 2;
+		for (int i = 1; !queue.empty();)
+		{
+			element = queue.front();
+			queue.pop();
+			if (element == root) {
+				for (int j = 1; j <= spaces / 2; j++) {
+					fprintf(fp, "%s ", " ");
+				}
+			}
+			for (int j = 1; j <= spaces; j++) {
+				fprintf(fp, "%s ", " ");
+			}
+			if (element == NULL)
+			{
+				queue.push(NULL);
+				queue.push(NULL);
+				for (int j = 1; j <= 4; j++) {
+					fprintf(fp, "%s ", " ");
+				}
+			}
+			else
+			{
+				flag = true;
+				for (int j = 1; j <= 2; j++) {
+					fprintf(fp, "%s ", " ");
+				}
+				fprintf(fp, "%s ", "(");
+				fprintf(fp, "%d ", element->data);
+				fprintf(fp, "%s ", ")");
+				queue.push(element->left);
+				queue.push(element->right);
+			}
+			for (int j = 1; j <= spaces; j++) {
+				fprintf(fp, "%s ", " ");
+			}
+
+			if (--counter == 0)
+			{
+				if (!flag) break;
+				flag = false;
+				spaces = pow(2, level - i - 1) * 4 - 2;
+				counter = pow(2, i++);
+				fprintf(fp, "%s ", "\n ");
+			}
+		}
+
+		fclose(fp);
+	}
+
+	int search(int element)
+	{
+		bin_node* found, * search;
+		if (root != NULL)
+		{
+			found = search = root;
+			while (search != NULL)
+			{
+				if (search->data < element)
+				{
+					found = search;
+					search = search->right;
+				}
+				else if (search->data > element)
+				{
+					found = search;
+					search = search->left;
+				}
+				else
+				{
+					return search->data;
+				}
+			}
+			return found->data;
+		}
+	}
+
+	void add(int element)
+	{
+		bin_node* search_el = search_p(element);
+		bin_node* new_element = new bin_node;
+		if (root == NULL) {
+			root = new_element;
+		}
+		new_element->data = element;
+		new_element->left = NULL;
+		new_element->right = NULL;
+		if (element < search_el->data)
+			search_el->left = new_element;
+		else
+			search_el->right = new_element;
+	}
+
+	void delete_el(int element) {
+		bin_node* child = root;
+		bin_node* parent = NULL;
+		while (child->data != element) {
+
+			if (child->data < element) {
+				parent = child;
+				child = child->right;
+			}
+			if (child->data > element) {
+				parent = child;
+				child = child->left;
+			}
+		}
+
+		if (child->left == NULL && child->right == NULL) {
+
+			if (parent->right == child && parent != NULL) { parent->right = NULL; }
+			if (parent->left == child && parent != NULL) { parent->left = NULL; }
+			child = NULL;
+		}
+
+		else if (child->left == NULL) {
+			if (parent != NULL) {
+				if (parent->right == child) { parent->right = child->right; }
+				else { parent->left = child->right; }
+				child = NULL;
+			}
+			else {
+				root = child->right;
+			};
+		}
+
+		else if (child->right == NULL) {
+			if (parent != NULL) {
+				if (parent->left == child) { parent->left = child->left; }
+				else { parent->right = child->left; }
+				child = NULL;
+			}
+			else root = child->left;
+		}
+
+		else if (child->left != NULL && child->right != NULL) {
+			bin_node* new_child = child;
+			child = child->right;
+			while (child->left != NULL) child = child->left;
+			delete_el(child->data);
+			new_child->data = child->data;
+		}
+
+	}
+
+
+};
+
+int main()
+{
+	setlocale(LC_ALL, "Russian");
+	bin_tree bintree;
+	int command(-1);
+	int new_data, search_data, delete_data;
+
+	while (command != 0) {
+		cout << endl;
+		cout << "Введите одну из двух команд для работы с бинарным деревом." << endl;
+		cout << "1 - добавление нового элемента" << endl;
+		cout << "2 - поиск элемента" << endl;
+		cout << "3 - обход бинарного дерева и запись полученных данных в файл" << endl;
+		cout << "4 - удаление элемента" << endl;
+
+		cin >> command;
+		switch (command) {
+		case 1:
+		{
+			cout << "Введите значение элемента: ";
+			cin >> new_data;
+			bintree.add(new_data);
+
+		}
+		break;
+		case 2:
+		{
+			cout << "Введите значение элемента: ";
+			cin >> search_data;
+			if (bintree.search(search_data) == search_data) { cout << "Элемент найден." << endl; }
+			else { cout << "Элемент не найден." << endl; }
+		}
+		break;
+		case 3:
+		{
+			bintree.output();
+			cout << "Обход бинарного дерева совершен. Ваши данные сохранены в текстовый файл. Откройте его вручную для проверки." << endl;
+		}
+		break;
+		case 4:
+		{
+			cout << "Введите элемент, присутствующий в бинарном дереве: ";
+			cin >> delete_data;
+			bintree.delete_el(delete_data);
+			cout << "Элемент успешно удален!" << endl;
+		}
+		break;
+		default:
+			cout << "Вы ввели неправильную команду!" << endl;
+			break;
+		}
+	}
+	return 0;
+}
