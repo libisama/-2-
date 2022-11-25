@@ -1,0 +1,172 @@
+#include <iostream>
+
+using namespace std;
+
+class Dijkstra {
+private:
+	int N;
+	int** distances = new int* [100];
+	int* min_distance = new int[100];
+	int* passed_node = new int[100];
+	int* visited_node = new int[100];
+	int length, min_node, min, first_node = 0, node, previous_node = 1, final_length;
+
+public:
+
+	void Initial(int N) {
+		for (int i = 0; i < N; i++)
+		{
+			distances[i] = new int[N];
+			min_distance[i] = INT_MAX;
+			passed_node[i] = 1;
+			distances[i][i] = 0;
+		}
+	}
+
+	void AddLength(int i, int j, int length) {
+		distances[i][j] = distances[j][i] = length;
+	}
+
+	int Matrix(int i, int j) {
+		return distances[i][j];
+	}
+
+	void ShortestDistanceSearch(int N, int first_node) {
+		min_distance[first_node] = 0;
+
+		do {
+			min_node = INT_MAX;
+			min = INT_MAX;
+			for (int k = 0; k < N; k++)
+			{
+				if ((passed_node[k] != 0) && (min_distance[k] < min))
+				{
+					min = min_distance[k];
+					min_node = k;
+				}
+			}
+
+			if (min_node != INT_MAX)
+			{
+				for (int i = 0; i < N; i++)
+				{
+					if (distances[min_node][i] != 0)
+					{
+						length = min + distances[min_node][i];
+						if (length < min_distance[i])
+						{
+							min_distance[i] = length;
+
+						}
+					}
+				}
+				passed_node[min_node] = 0;
+			}
+		} while (min_node < INT_MAX);
+	}
+
+	int ShortestDistanceOutput(int i) {
+		return min_distance[i];
+	}
+
+	void ShortestWaySearch(int N, int node, int first_node) {
+		visited_node[0] = node + 1;
+		final_length = min_distance[node];
+		while (node != first_node)
+		{
+			for (int i = 0; i < N; i++)
+				if (distances[i][node] != 0)
+				{
+					int length = final_length - distances[i][node];
+					if (length == min_distance[i])
+					{
+						final_length = length;
+						node = i;
+						visited_node[previous_node] = i + 1;
+						previous_node++;
+						
+					}
+				}
+		}
+	}
+
+	int PreviousNode() {
+		return previous_node;
+	}
+
+	int VisitedNode(int i) {
+		return visited_node[i];
+	}
+
+	void DeleteData() {
+		for (int i = previous_node - 1; i >= 0; i--) {
+			visited_node[i] = 0;
+		}
+	}
+};
+
+int main()
+{
+	setlocale(LC_ALL, "Russian");
+	int n;
+	cout << "Введите количество вершин графа: ";
+	cin >> n;
+	Dijkstra graph;
+	int way_length, first_point, command(-1), node;
+	graph.Initial(n);
+
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = i + 1; j < n; j++) {
+			cout << "Введите расстояние между " << i + 1 << " и " << j + 1 << ": ";
+			cin >> way_length;
+			graph.AddLength(i, j, way_length);
+		}
+	}
+
+	cout << endl;
+	cout << "Матрица связей: " << endl;
+	cout << endl;
+
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++) {
+			cout << "  " << graph.Matrix(i, j);
+		}
+		cout << endl;
+	}
+
+	cout << "Введите начальную вершину: ";
+	cin >> first_point;
+	first_point--;
+	graph.ShortestDistanceSearch(n, first_point);
+
+	cout << "Кратчайшие расстояния до вершин (по порядку): " << endl;
+	for (int i = 0; i < n; i++) {
+		cout << "  " << graph.ShortestDistanceOutput(i);
+	}
+	cout << endl;
+
+	while (command != 0) {
+		cout << "До какой вершины нужно расписать кратчайщий путь по узлам? ";
+		cin >> node;
+		node--;
+		graph.ShortestWaySearch(n, node, first_point);
+
+		cout << "Кратчайший путь по узлам: " << endl;
+		for (int i = graph.PreviousNode() - 1; i >= 0; i--) {
+			
+			if (graph.VisitedNode(i) != 0) {
+				cout << "  " << graph.VisitedNode(i);
+			}
+		}
+
+		cout << endl;
+		cout << "Продолжить ? 1 - да, 0 - нет. ";
+		cin >> command;
+		graph.DeleteData();
+	}
+
+
+	return 0;
+}
