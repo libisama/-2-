@@ -1,0 +1,167 @@
+#include <iostream>
+
+using namespace std;
+
+const int N = 9;
+int arr[N][N] =
+{ {0,1,0,0,0,0,0,1,0},
+{1,0,1,0,0,0,0,0,1},
+{0,1,0,1,0,0,0,0,0},
+{0,0,1,0,1,0,0,0,1},
+{0,0,0,1,0,1,0,0,0},
+{0,0,0,0,1,0,1,0,1},
+{0,0,0,0,0,1,0,1,0},
+{1,0,0,0,0,0,1,0,1},
+{0,1,0,1,0,1,0,1,0} };
+
+bool passed_node[N];
+int parent_node[N];
+
+struct node {
+	int data;
+	node* next;
+	node* previous;
+};
+
+class stack {
+private:
+	node* first;
+	node* last;
+	int node_count;
+public:
+	stack()
+	{
+		last = NULL;
+		first = NULL;
+		node_count = 0;
+	}
+
+	void add(int element)
+	{
+		node* new_node = new node;
+		new_node->data = element;
+		if (first == NULL) {
+			first = new_node;
+		}
+		new_node->next = NULL;
+		
+		if (last != NULL) {
+			new_node->previous = last;
+			last->next = new_node;
+		}
+		last = new_node;
+		node_count++;
+	}
+
+	void delete_last_node()
+	{
+		node* position = last;
+		if (position != first)
+		{
+			position->previous->next = NULL;
+			last = position->previous;
+		}
+		else
+		{
+			first = NULL;
+			last = NULL;
+		}
+		delete position;
+		node_count--;
+	}
+
+	bool is_empty()
+	{
+		bool emptiness;
+		if (first == NULL) emptiness = true;
+		else emptiness = false;
+		return emptiness;
+	}
+
+	int last_node()
+	{
+		return last->data;
+	}
+};
+
+int main()
+{
+	setlocale(LC_ALL, "Russian");
+	stack Stack;
+	int first_node;
+	for (int i = 0; i < N; i++)
+	{
+		passed_node[i] = 0;
+	}
+	cout << "Начальная вершина: ";
+	cin >> first_node;
+	first_node--;
+	Stack.add(first_node);
+	passed_node[first_node] = 1;
+	parent_node[first_node] = -1;
+	int i;
+	int last_parent;
+	int count(0);
+	int parent = Stack.last_node();
+	while (Stack.is_empty() == false)
+	{
+		Stack.delete_last_node();
+		count = 0;
+		for (i = 0; i < N; i++)
+		{
+			if ((passed_node[i] == 0) && (arr[parent][i] == 1))
+			{
+				Stack.add(i);
+				passed_node[i] = 1;
+				count++;
+			}
+		}
+		last_parent = parent;
+		if (Stack.is_empty() == false) parent = Stack.last_node();
+		else break;
+		if ((count != 0) || (arr[last_parent][parent] == 1)) parent_node[parent] = last_parent;
+		if (parent_node[parent] == NULL) {
+			for (i = 0; i < N; i++)
+			{
+				if ((passed_node[i] == 1) && (arr[parent][i] == 1))
+				{
+					parent_node[parent] = i;
+					break;
+				}
+			}
+		}
+	}
+
+	int last_node;
+	cout << "Конечная вершина: ";
+	cin >> last_node;
+	last_node--;
+	int last = last_node;
+	int node_count = 0;
+	do {
+		node_count++;
+		last = parent_node[last];
+	} while (last != parent_node[first_node]);
+
+	int* way = new int[node_count];
+	i = 0;
+	way[i] = last_node;
+	i++;
+	do {
+		way[i] = parent_node[last_node];
+		i++;
+		last_node = parent_node[last_node];
+	} while (last_node != first_node);
+
+	i--;
+	cout << "Пройденный путь: " << endl;
+	while (i >= 0)
+	{
+		cout << way[i] + 1 << " ";
+		i--;
+	}
+
+
+
+	return 0;
+}
