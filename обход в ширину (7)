@@ -1,0 +1,148 @@
+#include <iostream>
+
+using namespace std;
+
+const int N = 9;
+int arr[N][N] =
+{ {0,1,0,0,0,0,0,1,0},
+{1,0,1,0,0,0,0,0,1},
+{0,1,0,1,0,0,0,0,0},
+{0,0,1,0,1,0,0,0,1},
+{0,0,0,1,0,1,0,0,0},
+{0,0,0,0,1,0,1,0,1},
+{0,0,0,0,0,1,0,1,0},
+{1,0,0,0,0,0,1,0,1},
+{0,1,0,1,0,1,0,1,0} };
+
+bool passed_node[N];
+int parent_node[N];
+
+struct node {
+	int data;
+	node* next;
+	node* previous;
+};
+
+class queue {
+private:
+	node* first;
+	node* last;
+	int node_count;
+public:
+	queue()
+	{
+		last = NULL;
+		first = NULL;
+		node_count = 0;
+	}
+
+	void add(int element)
+	{
+		node* new_node = new node;
+		new_node->data = element;
+		if (first == NULL) {
+			first = new_node;
+		}
+		new_node->next = NULL;
+		new_node->previous = last;
+		if (last != NULL) {
+			last->next = new_node;
+		}
+		last = new_node;
+		node_count++;
+	}
+
+	void delete_first_node()
+	{
+		node* position = first;
+		if (position != last)
+		{
+			position->next->previous = NULL;
+			first = position->next;
+		}
+		else
+		{
+			first = NULL;
+			last = NULL;
+		}
+		delete position;
+		node_count--;
+	}
+
+	bool is_empty()
+	{
+		bool emptiness;
+		if (first == NULL) emptiness = true;
+		else emptiness = false;
+		return emptiness;
+	}
+
+	int first_node()
+	{
+		return first->data;
+	}
+};
+
+int main()
+{
+	setlocale(LC_ALL, "Russian");
+	queue Queue;
+	int first_node;
+	for (int i = 0; i < N; i++)
+	{
+		passed_node[i] = 0;
+	}
+		cout << "Начальная вершина: ";
+		cin >> first_node;
+		first_node--;
+		Queue.add(first_node);
+		passed_node[first_node] = 1;
+		parent_node[first_node] = -1;
+		while (Queue.is_empty() == false)
+		{
+			int parent = Queue.first_node();
+			Queue.delete_first_node();
+			for (int i = 0; i < N; i++)
+			{
+				if ((passed_node[i] == 0) && (arr[parent][i] == 1))
+				{
+					Queue.add(i);
+					parent_node[i] = parent;
+					passed_node[i] = 1;
+				}
+			}
+		}
+
+		int last_node;
+		cout << "Конечная вершина: ";
+		cin >> last_node;
+		last_node--;
+		int last = last_node;
+		int node_count = 0;
+		do {
+			node_count++;
+			last = parent_node[last];
+		} while (last != parent_node[first_node]);
+
+		int* way = new int[node_count];
+		int i = 0;
+		way[i] = last_node;
+		i++;
+		do {
+			way[i] = parent_node[last_node];
+			i++;
+			last_node = parent_node[last_node];
+		} while (last_node != first_node);
+
+		i--;
+		cout << "Пройденный путь: " << endl;
+		while (i >= 0)
+		{
+			cout << way[i] + 1 << " ";
+			i--;
+		}
+		
+
+
+return 0;
+}
